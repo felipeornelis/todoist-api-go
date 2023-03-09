@@ -1,31 +1,57 @@
 package todoist
 
-import "testing"
+import (
+	"log"
+	"net/http"
+	"os"
+	"testing"
+	"time"
 
-var td = New("aaf9decbe52a5a9a3b519d92ff5a9efff5938970")
+	"github.com/joho/godotenv"
+)
+
+var todoist *Todoist
+
+func init() {
+	if err := godotenv.Load(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func init() {
+	todoist = NewTodoist(os.Getenv("TODOIST_TOKEN"), &http.Client{
+		Timeout: 12 * time.Second,
+	})
+}
 
 func TestNewTask(t *testing.T) {
 	tests := []struct {
-		input   NewTaskInput
-		wantErr bool
+		scenario string
+		input    NewTaskInputDTO
+		err      error
 	}{
 		{
-			NewTaskInput{Content: "___Todoist SDK___ - Testing", Labels: []string{"TodoistSDK"}},
-			false,
+			scenario: "Create a new task successfully",
+			input:    NewTaskInputDTO{Content: "I gotta do dishes after finishing it"},
+			err:      nil,
 		},
 		{
-			NewTaskInput{},
-			true,
-		},
-		{
-			NewTaskInput{Content: ""},
-			true,
+			scenario: "Prevent from creating a task with a blank content",
+			input:    NewTaskInputDTO{},
+			err:      errTaskContentNotFilled,
 		},
 	}
 
-	for _, test := range tests {
-		if _, err := td.NewTask(test.input); !test.wantErr && err != nil {
-			t.Errorf("todoist.NewTask(\"%s\") = %v. Got: %s", test.input.Content, test.wantErr, err)
+	t.Log("Validate the NewTask method")
+	{
+		for _, test := range tests {
+			t.Logf("\tTest scenario: %s", test.scenario)
+			{
+				_, err := todoist.NewTask(test.input)
+				if err != test.err {
+					t.Errorf("\tNewTask(%v) = %v; Got %v", test.input, test.err, err)
+				}
+			}
 		}
 	}
 }

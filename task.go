@@ -1,214 +1,102 @@
 package todoist
 
 import (
+	"bytes"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"io"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 var (
-	CloseOperation  = "close"
-	ReopenOperation = "reopen"
+	errTaskContentNotFilled          = errors.New("content field is required")
+	errTaskInputFailedToMarshal      = errors.New("failed to marshal the input request")
+	errTaskFailedToWrapNewRequest    = errors.New("failed to wrap the new request")
+	errTaskFailedToRequest           = errors.New("failed to request task data")
+	errTaskBodyNotParsedToByte       = errors.New("failed to parse body response to []byte")
+	errTaskResponseFailedToUnmarshal = errors.New("failed to unmarshal body response")
 )
 
-type (
-	Task struct {
-		ID          string   `json:"id"`
-		ProjectID   string   `json:"project_id"`
-		SectionID   string   `json:"section_id"`
-		Content     string   `json:"content"`
-		Description string   `json:"description"`
-		IsCompleted bool     `json:"is_completed"`
-		Labels      []string `json:"labels"`
-		ParentID    string   `json:"parent_id"`
-		Priority    uint8    `json:"priority"`
-		Due         TaskDue  `json:"due"`
-		AssigneeID  string   `json:"assignee_id"`
-		AssignerID  string   `json:"assigner_id"`
+type Task struct {
+	ID           string   `json:"id"`
+	ProjectID    string   `json:"project_id"`
+	SectionID    string   `json:"section_id"`
+	Content      string   `json:"content"`
+	Description  string   `json:"description"`
+	IsCompleted  bool     `json:"is_completed"`
+	Labels       []string `json:"labels"`
+	ParentID     string   `json:"parent_id"`
+	Order        uint     `json:"order"`
+	Priority     uint8    `json:"priority"`
+	Due          Due      `json:"due"`
+	URL          string   `json:"url"`
+	CommentCount int      `json:"comment_count"`
+	CreatedAt    string   `json:"created_at"`
+	CreatorID    string   `json:"created_id"`
+	AssigneeID   string   `json:"assignee_id"`
+	AssignerID   string   `json:"assigner_id"`
+}
 
-		// Read only
-		Order        int    `json:"order"`
-		Url          string `json:"url"`
-		CommentCount int    `json:"comment_count"`
-		CreatedAt    string `json:"created_at"`
-		CreatorID    string `json:"creator_id"`
+type Due struct {
+	String      string `json:"string"`
+	Date        string `json:"date"`
+	IsRecurring bool   `json:"is_recurring"`
+	Datetime    string `json:"datetime,omitempty"`
+	Timezone    string `json:"timezone,omitempty"`
+}
+
+type NewTaskInputDTO struct {
+	Content     string   `json:"content"`
+	Description string   `json:"description,omitempty"`
+	ProjectID   string   `json:"project_id,omitempty"`
+	SectionID   string   `json:"section_id,omitempty"`
+	ParentID    string   `json:"parent_id,omitempty"`
+	Order       uint     `json:"order,omitempty"`
+	Labels      []string `json:"labels,omitempty"`
+	Priority    uint8    `json:"priority,omitempty"`
+	DueString   string   `json:"due_string,omitempty"`
+	DueDatetime string   `json:"due_datetime,omitempty"`
+	DueLang     string   `json:"due_lang,omitempty"`
+	AssigneeID  string   `json:"assignee_id,omitempty"`
+}
+
+func (t *Todoist) NewTask(input NewTaskInputDTO) (Task, error) {
+	if input.Content == "" {
+		return Task{}, errTaskContentNotFilled
 	}
 
-	TaskDue struct {
-		String      string `json:"string"`
-		Date        string `json:"date"`
-		IsRecurring bool   `json:"is_recurring"`
-		Datetime    string `json:"datetime,omitempty"`
-		Timezone    string `json:"timezone,omitempty"`
-	}
-
-	NewTaskInput struct {
-		Content     string   `json:"content"`
-		Description string   `json:"description,omitempty"`
-		ProjectID   string   `json:"project_id,omitempty"`
-		SectionID   string   `json:"section_id,omitempty"`
-		Order       int      `json:"order,omitempty"`
-		Labels      []string `json:"labels,omitempty"`
-		Priority    uint8    `json:"priority,omitempty"`
-		DueString   string   `json:"due_string,omitempty"`
-		DueDate     string   `json:"due_date,omitempty"`
-		DueDatetime string   `json:"due_datetime,omitempty"`
-		DueLang     string   `json:"due_lang,omitempty"`
-		AssigneeID  string   `json:"assignee_id,omitempty"`
-	}
-
-	TaskUpdateInput struct {
-		Content     string   `json:"content,omitempty"`
-		Description string   `json:"description,omitempty"`
-		Labels      []string `json:"labels,omitempty"`
-		DueString   string   `json:"due_string,omitempty"`
-		DueDate     string   `json:"due_date,omitempty"`
-		DueDatetime string   `json:"due_datetime,omitempty"`
-		DueLang     string   `json:"due_lang,omitempty"`
-		AssigneeID  string   `json:"assignee_id,omitempty"`
-	}
-)
-
-func (t Todoist) NewTask(payload NewTaskInput) (Task, error) {
-	input, err := Json(payload)
+	bodyRequest, err := json.Marshal(input)
 	if err != nil {
-		return Task{}, err
+		return Task{}, errTaskInputFailedToMarshal
 	}
 
-	res, err := Request(http.MethodPost, tasksURL, t.token, input)
+	request, err := http.NewRequest(http.MethodPost, TaskURL, bytes.NewBuffer(bodyRequest))
 	if err != nil {
-		return Task{}, err
+		return Task{}, errTaskFailedToWrapNewRequest
 	}
 
-	defer res.Body.Close()
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Request-Id", uuid.New().String())
+	request.Header.Set("Authorization", "Bearer "+t.token)
 
-	body, err := io.ReadAll(res.Body)
+	response, err := t.client.Do(request)
 	if err != nil {
-		return Task{}, err
+		return Task{}, errTaskFailedToRequest
+	}
+
+	defer response.Body.Close()
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return Task{}, errTaskBodyNotParsedToByte
 	}
 
 	var task Task
-
 	if err := json.Unmarshal(body, &task); err != nil {
-		return Task{}, err
+		return Task{}, errTaskResponseFailedToUnmarshal
 	}
 
 	return task, nil
-}
-
-func (t Todoist) Tasks() ([]Task, error) {
-	res, err := Request(http.MethodGet, tasksURL, t.token, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	defer res.Body.Close()
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var tasks []Task
-
-	if err := json.Unmarshal(body, &tasks); err != nil {
-		return nil, err
-	}
-
-	return tasks, nil
-}
-
-func (t Todoist) Task(id string) (Task, error) {
-	res, err := Request(http.MethodGet, fmt.Sprintf("%s/%s", tasksURL, id), t.token, nil)
-	if err != nil {
-		return Task{}, nil
-	}
-
-	defer res.Body.Close()
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return Task{}, err
-	}
-
-	var task Task
-
-	if err := json.Unmarshal(body, &task); err != nil {
-		return Task{}, err
-	}
-
-	return task, nil
-}
-
-func (t Todoist) TaskUpdate(id string, payload TaskUpdateInput) (Task, error) {
-	buf, err := Json(payload)
-	if err != nil {
-		return Task{}, nil
-	}
-
-	res, err := Request(http.MethodPost, fmt.Sprintf("%s/%s", tasksURL, id), t.token, buf)
-	if err != nil {
-		return Task{}, err
-	}
-
-	defer res.Body.Close()
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return Task{}, err
-	}
-
-	var task Task
-
-	if err := json.Unmarshal(body, &task); err != nil {
-		return Task{}, nil
-	}
-
-	return task, nil
-}
-
-func (t Todoist) TaskClose(id string) error {
-	res, err := Request(http.MethodPost, fmt.Sprintf("%s/%s/%s", tasksURL, id, CloseOperation), t.token, nil)
-	if err != nil {
-		return err
-	}
-
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("todoist.TaskClose: expected status code 204. Got %v", res.StatusCode)
-	}
-
-	return nil
-}
-
-func (t Todoist) TaskReopen(id string) error {
-	res, err := Request(http.MethodPost, fmt.Sprintf("%s/%s/%s", tasksURL, id, ReopenOperation), t.token, nil)
-	if err != nil {
-		return err
-	}
-
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("todoist.TaskReopen: expected status code 204. Got %v", res.StatusCode)
-	}
-
-	return nil
-}
-
-func (t Todoist) TaskDelete(id string) error {
-	res, err := Request(http.MethodDelete, fmt.Sprintf("%s/%s", tasksURL, id), t.token, nil)
-	if err != nil {
-		return err
-	}
-
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("todoist.TaskDelete: expected status code 204. Got %v", res.StatusCode)
-	}
-
-	return nil
 }

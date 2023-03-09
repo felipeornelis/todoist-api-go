@@ -1,3 +1,4 @@
-cmd/
-*.exe
-DS_Store/
+bin/
+.env
+!.env.example
+
