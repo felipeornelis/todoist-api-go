@@ -15,7 +15,7 @@ type Todoist struct {
 	client *http.Client
 }
 
-func NewTodoist(token string, client *http.Client) *Todoist {
+func New(token string, client *http.Client) *Todoist {
 	return &Todoist{
 		token:  token,
 		client: client,
