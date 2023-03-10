@@ -1,4 +1,4 @@
-# Todoist API Go Client
+# Todoist API Go Client (wip)
 This is an Unofficial Go API Client for the Todoist REST API.
 
 ## Installation
