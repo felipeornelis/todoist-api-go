@@ -188,3 +188,30 @@ func TestReopenTask(t *testing.T) {
 		}
 	}
 }
+
+func TestDeleteTask(t *testing.T) {
+	tests := []struct {
+		scenario string
+		input    string
+		err      error
+	}{
+		{
+			scenario: "Delete a task",
+			input:    "6691656280",
+			err:      nil,
+		},
+	}
+
+	t.Log("Validate DeleteTask(id) method")
+	{
+		for _, test := range tests {
+			t.Logf("\tScenario: %s", test.scenario)
+			{
+				err := todoist.DeleteTask(test.input)
+				if err != test.err {
+					t.Errorf("DeleteTask(%s) = %v; Got = %v", test.input, test.err, err)
+				}
+			}
+		}
+	}
+}

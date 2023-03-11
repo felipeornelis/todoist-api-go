@@ -264,3 +264,25 @@ func (t *Todoist) ReopenTask(id string) error {
 
 	return nil
 }
+
+func (t *Todoist) DeleteTask(id string) error {
+	if id == "" {
+		return errTaskIDNotProvided
+	}
+
+	url := fmt.Sprintf("%s/%s", TaskURL, id)
+
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		return errTaskFailedToWrapNewRequest
+	}
+
+	req.Header.Set("Authorization", "Bearer "+t.token)
+
+	_, err = t.client.Do(req)
+	if err != nil {
+		return errTaskFailedToRequest
+	}
+
+	return nil
+}
