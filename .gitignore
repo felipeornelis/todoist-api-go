@@ -1,0 +1,6 @@
+.DS_Store
+cmd/
+.env
+errors/
+bin/
+*.exe
