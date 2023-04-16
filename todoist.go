@@ -12,7 +12,7 @@ type Todoist struct {
 
 func New(token string) *Todoist {
 	return &Todoist{
-		Task:    task.Service{Token: token},
-		Project: project.Service{Token: token},
+		Task:    task.NewService(token),
+		Project: project.NewService(token),
 	}
 }

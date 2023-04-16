@@ -11,7 +11,7 @@ import (
 	"github.com/felipeornelis/todoist-api-go/url"
 )
 
-func (s Service) Get(id string) (*Task, error) {
+func (s Service) Get(id string) (*task, error) {
 	if id == "" {
 		return nil, errors.New("no ID provided")
 	}
@@ -21,7 +21,7 @@ func (s Service) Get(id string) (*Task, error) {
 		return nil, err
 	}
 
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.Token))
+	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.token))
 
 	client := &http.Client{
 		Timeout: time.Second * 10,
@@ -43,7 +43,7 @@ func (s Service) Get(id string) (*Task, error) {
 		return nil, err
 	}
 
-	var task *Task
+	var task *task
 	if err := json.Unmarshal(body, &task); err != nil {
 		return nil, err
 	}

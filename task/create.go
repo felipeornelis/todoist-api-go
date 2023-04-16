@@ -23,14 +23,19 @@ type CreateTaskInput struct {
 	Labels      []string `json:"labels,omitempty"`
 	Priority    uint8    `json:"priority,omitempty"`
 	DueString   string   `json:"due_string,omitempty"`
+	DueDate     string   `json:"due_date,omitempty"`
 	DueDatetime string   `json:"due_datetime,omitempty"`
 	DueLang     string   `json:"due_lang,omitempty"`
 	AssigneeID  string   `json:"assignee_id,omitempty"`
 }
 
-func (s Service) Create(input CreateTaskInput) (*Task, error) {
+func (s Service) Create(input CreateTaskInput) (*task, error) {
 	if input.Content == "" {
 		return nil, errors.New("content is a required field")
+	}
+
+	if input.DueDate == "" {
+		input.DueDate = time.Now().Format("2006-01-02")
 	}
 
 	payload, err := json.Marshal(input)
@@ -43,7 +48,7 @@ func (s Service) Create(input CreateTaskInput) (*Task, error) {
 		return nil, err
 	}
 
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.Token))
+	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.token))
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("x-request-id", uuid.New().String())
 
@@ -63,10 +68,34 @@ func (s Service) Create(input CreateTaskInput) (*Task, error) {
 		return nil, err
 	}
 
-	var task Task
-	if err := json.Unmarshal(body, &task); err != nil {
+	var output task
+	if err := json.Unmarshal(body, &output); err != nil {
 		return nil, err
 	}
 
-	return &task, nil
+	return &task{
+		ID:          output.ID,
+		ProjectID:   output.ProjectID,
+		SectionID:   output.SectionID,
+		Content:     output.Content,
+		Description: output.Description,
+		IsCompleted: output.IsCompleted,
+		Labels:      output.Labels,
+		ParentID:    output.ParentID,
+		Order:       output.Order,
+		Priority:    output.Priority,
+		Due: due{
+			String:      output.Due.String,
+			Date:        output.Due.Date,
+			IsRecurring: output.Due.IsRecurring,
+			Datetime:    output.Due.Datetime,
+			Timezone:    output.Due.Timezone,
+		},
+		URL:          output.URL,
+		CommentCount: output.CommentCount,
+		CreatedAt:    output.CreatedAt,
+		CreatorID:    output.CreatorID,
+		AssigneeID:   output.AssigneeID,
+		AssignerID:   output.AssignerID,
+	}, nil
 }

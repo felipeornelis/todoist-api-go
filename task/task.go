@@ -1,6 +1,6 @@
 package task
 
-type Task struct {
+type task struct {
 	ID           string   `json:"id"`
 	ProjectID    string   `json:"project_id"`
 	SectionID    string   `json:"section_id"`
@@ -11,7 +11,7 @@ type Task struct {
 	ParentID     string   `json:"parent_id"`
 	Order        uint     `json:"order"`
 	Priority     uint8    `json:"priority"`
-	Due          Due      `json:"due"`
+	Due          due      `json:"due"`
 	URL          string   `json:"url"`
 	CommentCount int      `json:"comment_count"`
 	CreatedAt    string   `json:"created_at"`
@@ -20,7 +20,7 @@ type Task struct {
 	AssignerID   string   `json:"assigner_id"`
 }
 
-type Due struct {
+type due struct {
 	String      string `json:"string"`
 	Date        string `json:"date"`
 	IsRecurring bool   `json:"is_recurring"`

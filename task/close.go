@@ -9,7 +9,7 @@ import (
 	"github.com/felipeornelis/todoist-api-go/url"
 )
 
-func (s Service) Close(task *Task) error {
+func (s Service) Close(task *task) error {
 	if task.ID == "" {
 		return errors.New("no ID provided")
 	}
@@ -19,7 +19,7 @@ func (s Service) Close(task *Task) error {
 		return err
 	}
 
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.Token))
+	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.token))
 
 	client := &http.Client{
 		Timeout: time.Second * 10,

@@ -16,7 +16,7 @@ func (s Service) GetAll() ([]*Project, error) {
 		return nil, err
 	}
 
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.Token))
+	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.token))
 
 	client := &http.Client{
 		Timeout: time.Second * 10,

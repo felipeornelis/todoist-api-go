@@ -10,13 +10,13 @@ import (
 	"github.com/felipeornelis/todoist-api-go/url"
 )
 
-func (s Service) GetAll() ([]*Task, error) {
+func (s Service) GetAll() ([]*task, error) {
 	request, err := http.NewRequest(http.MethodGet, url.Tasks, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.Token))
+	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.token))
 
 	client := &http.Client{
 		Timeout: time.Second * 10,
@@ -34,7 +34,7 @@ func (s Service) GetAll() ([]*Task, error) {
 		return nil, err
 	}
 
-	var tasks []*Task
+	var tasks []*task
 
 	if err := json.Unmarshal(body, &tasks); err != nil {
 		return nil, err

@@ -1,5 +1,11 @@
 package task
 
 type Service struct {
-	Token string
+	token string
+}
+
+func NewService(token string) Service {
+	return Service{
+		token: token,
+	}
 }

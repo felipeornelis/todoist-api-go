@@ -26,7 +26,7 @@ type UpdateTaskInput struct {
 	AssigneeID string `json:"assignee_id,omitempty"`
 }
 
-func (s Service) Update(input *Task) error {
+func (s Service) Update(input *task) error {
 	if input.ID == "" {
 		return errors.New("no ID provided")
 	}
@@ -50,7 +50,7 @@ func (s Service) Update(input *Task) error {
 		return err
 	}
 
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.Token))
+	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.token))
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("x-request-id", uuid.New().String())
 
