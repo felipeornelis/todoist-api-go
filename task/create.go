@@ -34,7 +34,7 @@ func (s Service) Create(input CreateTaskInput) (task, error) {
 		return task{}, errors.New("content is a required field")
 	}
 
-	if input.DueDate == "" {
+	if input.DueDate == "" && input.DueString == "" {
 		input.DueDate = time.Now().Format("2006-01-02")
 	}
 
