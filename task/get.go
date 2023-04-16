@@ -11,14 +11,14 @@ import (
 	"github.com/felipeornelis/todoist-api-go/url"
 )
 
-func (s Service) Get(id string) (*task, error) {
+func (s Service) Get(id string) (task, error) {
 	if id == "" {
-		return nil, errors.New("no ID provided")
+		return task{}, errors.New("no ID provided")
 	}
 
 	request, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", url.Tasks, id), nil)
 	if err != nil {
-		return nil, err
+		return task{}, err
 	}
 
 	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.token))
@@ -29,24 +29,24 @@ func (s Service) Get(id string) (*task, error) {
 
 	response, err := client.Do(request)
 	if err != nil {
-		return nil, err
+		return task{}, err
 	}
 
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return nil, err
+		return task{}, err
 	}
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, err
+		return task{}, err
 	}
 
-	var task *task
-	if err := json.Unmarshal(body, &task); err != nil {
-		return nil, err
+	var output task
+	if err := json.Unmarshal(body, &output); err != nil {
+		return task{}, err
 	}
 
-	return task, nil
+	return output, nil
 }

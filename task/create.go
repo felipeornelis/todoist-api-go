@@ -29,9 +29,9 @@ type CreateTaskInput struct {
 	AssigneeID  string   `json:"assignee_id,omitempty"`
 }
 
-func (s Service) Create(input CreateTaskInput) (*task, error) {
+func (s Service) Create(input CreateTaskInput) (task, error) {
 	if input.Content == "" {
-		return nil, errors.New("content is a required field")
+		return task{}, errors.New("content is a required field")
 	}
 
 	if input.DueDate == "" {
@@ -40,12 +40,12 @@ func (s Service) Create(input CreateTaskInput) (*task, error) {
 
 	payload, err := json.Marshal(input)
 	if err != nil {
-		return nil, err
+		return task{}, err
 	}
 
 	request, err := http.NewRequest(http.MethodPost, url.Tasks, bytes.NewBuffer(payload))
 	if err != nil {
-		return nil, err
+		return task{}, err
 	}
 
 	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.token))
@@ -58,22 +58,22 @@ func (s Service) Create(input CreateTaskInput) (*task, error) {
 
 	response, err := client.Do(request)
 	if err != nil {
-		return nil, err
+		return task{}, err
 	}
 
 	defer response.Body.Close()
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, err
+		return task{}, err
 	}
 
 	var output task
 	if err := json.Unmarshal(body, &output); err != nil {
-		return nil, err
+		return task{}, err
 	}
 
-	return &task{
+	return task{
 		ID:          output.ID,
 		ProjectID:   output.ProjectID,
 		SectionID:   output.SectionID,

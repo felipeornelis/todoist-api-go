@@ -10,7 +10,7 @@ import (
 	"github.com/felipeornelis/todoist-api-go/url"
 )
 
-func (s Service) GetAll() ([]*task, error) {
+func (s Service) GetAll() ([]task, error) {
 	request, err := http.NewRequest(http.MethodGet, url.Tasks, nil)
 	if err != nil {
 		return nil, err
@@ -34,11 +34,11 @@ func (s Service) GetAll() ([]*task, error) {
 		return nil, err
 	}
 
-	var tasks []*task
+	var output []task
 
-	if err := json.Unmarshal(body, &tasks); err != nil {
+	if err := json.Unmarshal(body, &output); err != nil {
 		return nil, err
 	}
 
-	return tasks, nil
+	return output, nil
 }
