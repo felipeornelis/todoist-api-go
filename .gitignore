@@ -4,3 +4,4 @@ cmd/
 errors/
 bin/
 *.exe
+Makefile
