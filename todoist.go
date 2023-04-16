@@ -5,14 +5,14 @@ import (
 	"github.com/felipeornelis/todoist-api-go/task"
 )
 
-type Todoist struct {
+type todoist struct {
 	Task    task.Service
 	Project project.Service
 }
 
-func New(token string) *Todoist {
-	return &Todoist{
-		Task:    task.Service{Token: token},
-		Project: project.Service{Token: token},
+func New(token string) *todoist {
+	return &todoist{
+		Task:    task.NewService(token),
+		Project: project.NewService(token),
 	}
 }
